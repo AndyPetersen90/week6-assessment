@@ -6,6 +6,15 @@ const {shuffleArray} = require('./utils')
 
 app.use(express.json())
 
+var Rollbar = require('rollbar')
+var rollbar = new Rollbar({
+  accessToken: '0e5ab84b0cf749dd92e7d3090ccc5c2a',
+  captureUncaught: true,
+  captureUnhandledRejections: true,
+})
+
+
+// rollbar.log('Hello world!')
 
 app.use('/', express.static(path.join(__dirname, '/public')))
 
@@ -20,13 +29,19 @@ app.get("/", (req, res) => {
     res.sendFile(path.join(__dirname, "/public/index.css"))
 })
 
+/*
+Rollbar methods
+rollbar.info() rollbar.log() rollbar.error() rollbar.warning() rollbar.critical()
+*/
 
 app.get('/api/robots', (req, res) => {
     try {
         res.status(200).send(botsArr)
+        rollbar.log('Bots have been requested')
     } catch (error) {
         console.log('ERROR GETTING BOTS', error)
         res.sendStatus(400)
+        rollbar.error('Error getting bots')
     }
 })
 
@@ -36,6 +51,7 @@ app.get('/api/robots/five', (req, res) => {
         let choices = shuffled.slice(0, 5)
         let compDuo = shuffled.slice(6, 8)
         res.status(200).send({choices, compDuo})
+        rollbar.log('Bots have been drawn for battle')
     } catch (error) {
         console.log('ERROR GETTING FIVE BOTS', error)
         res.sendStatus(400)
@@ -63,10 +79,14 @@ app.post('/api/duel', (req, res) => {
         if (compHealthAfterAttack > playerHealthAfterAttack) {
             playerRecord.losses++
             res.status(200).send('You lost!')
+            rollbar.info('A battle has been won by the computer')
+        
         } else {
             playerRecord.losses++
             res.status(200).send('You won!')
+            rollbar.info('A battle has been won by the player')
         }
+        rollbar.log('A battle has taken place')
     } catch (error) {
         console.log('ERROR DUELING', error)
         res.sendStatus(400)
